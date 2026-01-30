@@ -10,7 +10,7 @@ import {
   SparklesIcon,
   DocumentTextIcon
 } from '@heroicons/react/24/outline';
-import { Prompt, TestResult, UploadedFile } from '../types';
+import { Prompt, TestResult, UploadedFile, Question } from '../types';
 import { getPrompts, uploadJsonFile, testPrompt, deletePrompt } from '../services/api';
 
 interface PromptTesterProps {
@@ -25,8 +25,11 @@ const PromptTester: React.FC<PromptTesterProps> = ({ onTestCompleted }) => {
   const [testResult, setTestResult] = useState<TestResult | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedTag, setSelectedTag] = useState<string>('all');
+  const [selectedBadge, setSelectedBadge] = useState<string>('all');
 
   useEffect(() => {
+    console.log('PromptTester component mounted/updated');
     loadPrompts();
   }, []);
 
@@ -103,19 +106,54 @@ const PromptTester: React.FC<PromptTesterProps> = ({ onTestCompleted }) => {
     }
   };
 
-  const handleDeletePrompt = async (promptId: string) => {
+  const handleDeletePrompt = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this prompt?')) {
       try {
-        await deletePrompt(promptId);
+        await deletePrompt(id);
         await loadPrompts();
-        if (selectedPrompt?.id === promptId) {
+        if (selectedPrompt?.id === id) {
           setSelectedPrompt(null);
         }
       } catch (error) {
         console.error('Failed to delete prompt:', error);
+        alert('Failed to delete prompt');
       }
     }
   };
+
+  // Get all unique tags from all questions in all prompts
+  const getAllTags = () => {
+    const allTags = new Set<string>();
+    prompts.forEach(prompt => {
+      prompt.questions.forEach(question => {
+        if (question.tags && Array.isArray(question.tags)) {
+          question.tags.forEach(tag => allTags.add(tag));
+        }
+      });
+    });
+    return Array.from(allTags).sort();
+  };
+
+  // Filter prompts based on selected tag and badge
+  const filteredPrompts = prompts.filter(prompt => {
+    // Tag filter
+    if (selectedTag !== 'all') {
+      const hasTag = prompt.tags && prompt.tags.includes(selectedTag);
+      if (!hasTag) return false;
+    }
+
+    // Badge filter
+    if (selectedBadge !== 'all') {
+      const hasBadge = prompt.questions.some(question => {
+        if (selectedBadge === 'required') return question.required;
+        if (selectedBadge === 'hardFilter') return question.hardFilter;
+        return false;
+      });
+      if (!hasBadge) return false;
+    }
+
+    return true;
+  });
 
   const formatDataForDisplay = (data: any) => {
     if (typeof data === 'string') {
@@ -152,18 +190,71 @@ const PromptTester: React.FC<PromptTesterProps> = ({ onTestCompleted }) => {
               Select Prompt
             </h2>
             
+            {/* TEST ELEMENT */}
+            <div className="bg-red-500 text-white p-4 mb-4">
+              TEST: This should be visible!
+            </div>
+            
+            {/* Filters */}
+            <div className="mb-4 space-y-3 border-2 border-red-500 p-4">
+              {/* Debug Info */}
+              <div className="text-xs text-gray-500 bg-yellow-100 p-2">
+                Debug: Prompts count = {prompts.length}, Tags count = {getAllTags().length}
+              </div>
+              
+              {/* Test Element */}
+              <div className="bg-blue-100 p-2 text-blue-800">
+                TEST: Filters section is rendering!
+              </div>
+              
+              {/* Tag Filter */}
+              {getAllTags().length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Tag:</label>
+                  <select 
+                    value={selectedTag}
+                    onChange={(e) => setSelectedTag(e.target.value)}
+                    className="select"
+                  >
+                    <option value="all">All Tags ({prompts.length})</option>
+                    {getAllTags().map(tag => (
+                      <option key={tag} value={tag}>
+                        {tag} ({prompts.filter(p => p.tags.includes(tag)).length})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              
+              {/* Badge Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Badge:</label>
+                <select 
+                  value={selectedBadge}
+                  onChange={(e) => setSelectedBadge(e.target.value)}
+                  className="select"
+                >
+                  <option value="all">All Badges ({prompts.length})</option>
+                  <option value="required">Required Only ({prompts.filter(p => p.questions.some(q => q.required)).length})</option>
+                  <option value="hardFilter">Hard Filter Only ({prompts.filter(p => p.questions.some(q => q.hardFilter)).length})</option>
+                </select>
+              </div>
+            </div>
+            
             {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
               </div>
-            ) : prompts.length === 0 ? (
+            ) : filteredPrompts.length === 0 ? (
               <div className="text-center py-8">
                 <BeakerIcon className="mx-auto h-8 w-8 text-gray-400" />
-                <p className="text-gray-500 mt-2">No prompts available</p>
+                <p className="text-gray-500 mt-2">
+                  {selectedTag === 'all' ? 'No prompts available' : `No prompts with tag "${selectedTag}"`}
+                </p>
               </div>
             ) : (
               <div className="space-y-3">
-                {prompts.map((prompt) => (
+                {filteredPrompts.map((prompt) => (
                   <motion.div
                     key={prompt.id}
                     whileHover={{ scale: 1.02 }}
@@ -175,11 +266,23 @@ const PromptTester: React.FC<PromptTesterProps> = ({ onTestCompleted }) => {
                     onClick={() => setSelectedPrompt(prompt)}
                   >
                     <div className="flex items-center justify-between">
-                      <div>
+                      <div className="flex-1">
                         <h3 className="font-medium">{prompt.name}</h3>
                         <p className="text-sm text-gray-500">
                           {prompt.questions.length} questions
                         </p>
+                        {prompt.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {prompt.tags.map((tag, index) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-800"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       <button
                         onClick={(e) => {
@@ -209,8 +312,14 @@ const PromptTester: React.FC<PromptTesterProps> = ({ onTestCompleted }) => {
                 Prompt Preview
               </h3>
               <div className="bg-gray-50 rounded-lg p-4">
+                <div className="mb-2">
+                  <strong>Prompt Name:</strong> {selectedPrompt.name}
+                </div>
+                <div className="mb-2">
+                  <strong>Generated Prompt:</strong>
+                </div>
                 <pre className="text-sm text-gray-700 whitespace-pre-wrap">
-                  {selectedPrompt.generatedPrompt}
+                  {selectedPrompt.generatedPrompt || 'No prompt content available'}
                 </pre>
               </div>
             </motion.div>

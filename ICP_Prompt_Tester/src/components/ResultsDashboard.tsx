@@ -47,6 +47,21 @@ const ResultsDashboard: React.FC = () => {
         getOverallAnalytics()
       ]);
       
+      console.log('Test Results with cost/token data:', resultsData.map(r => ({
+        id: r.id,
+        promptName: r.promptName,
+        tokensUsed: r.tokensUsed,
+        costUsd: r.costUsd,
+        resultTokens: r.result.tokensUsed,
+        resultCost: r.result.costUsd
+      })));
+
+      console.log('Calculated metrics:', {
+        totalCost: resultsData.reduce((sum, r) => sum + (r.costUsd || 0), 0),
+        totalTokens: resultsData.reduce((sum, r) => sum + (r.tokensUsed || 0), 0),
+        totalTests: resultsData.length
+      });
+      
       setPrompts(promptsData);
       setTestResults(resultsData);
       setOverallAnalytics(analyticsData);
@@ -63,8 +78,10 @@ const ResultsDashboard: React.FC = () => {
       const promptResults = results.filter(r => r.promptId === prompt.id);
       
       if (promptResults.length > 0) {
-        const totalConfidence = promptResults.reduce((sum, r) => sum + r.result.confidence, 0);
-        const totalTime = promptResults.reduce((sum, r) => sum + r.result.processingTime, 0);
+        const totalConfidence = promptResults.reduce((sum, r) => sum + (r.result.confidence || 0), 0);
+        const totalTime = promptResults.reduce((sum, r) => sum + (r.result.processingTime || 0), 0);
+        const totalTokens = promptResults.reduce((sum, r) => sum + (r.tokensUsed || 0), 0);
+        const totalCost = promptResults.reduce((sum, r) => sum + (r.costUsd || 0), 0);
         const lastTest = new Date(Math.max(...promptResults.map(r => new Date(r.timestamp).getTime())));
 
         metricsMap.set(prompt.id, {
@@ -73,6 +90,8 @@ const ResultsDashboard: React.FC = () => {
           totalTests: promptResults.length,
           averageConfidence: totalConfidence / promptResults.length,
           averageProcessingTime: totalTime / promptResults.length,
+          totalTokens,
+          totalCost,
           lastTest: lastTest.toISOString()
         });
       }
@@ -292,21 +311,20 @@ const ResultsDashboard: React.FC = () => {
                 <div className="total-cost">
                   <span className="label">Total API Cost:</span>
                   <span className="value">
-                    ${overallAnalytics.reduce((sum, p) => sum + (p.total_cost || 0), 0).toFixed(4)}
+                    ${testResults.reduce((sum: number, r: TestResult) => sum + (r.costUsd || 0), 0).toFixed(4)}
                   </span>
                 </div>
                 <div className="total-tokens">
                   <span className="label">Total Tokens Used:</span>
                   <span className="value">
-                    {overallAnalytics.reduce((sum, p) => sum + (p.total_tokens || 0), 0).toLocaleString()}
+                    {testResults.reduce((sum: number, r: TestResult) => sum + (r.tokensUsed || 0), 0).toLocaleString()}
                   </span>
                 </div>
-                <div className="avg-cost-per-test">
+                <div className="avg-cost">
                   <span className="label">Avg Cost per Test:</span>
                   <span className="value">
-                    ${overallAnalytics.length > 0 
-                      ? (overallAnalytics.reduce((sum, p) => sum + (p.total_cost || 0), 0) / 
-                         overallAnalytics.reduce((sum, p) => sum + p.total_tests, 0)).toFixed(6)
+                    ${testResults.length > 0
+                      ? (testResults.reduce((sum: number, r: TestResult) => sum + (r.costUsd || 0), 0) / testResults.length).toFixed(6)
                       : '0'
                     }
                   </span>

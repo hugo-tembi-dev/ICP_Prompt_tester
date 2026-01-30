@@ -38,6 +38,7 @@ const TestRuns: React.FC = () => {
             questions: [],
             answers: {},
             generatedPrompt: 'Prompt not found',
+            tags: [],
             createdAt: result.timestamp
           }
         };
@@ -87,6 +88,8 @@ const TestRuns: React.FC = () => {
       'Test Data Content',
       'Confidence Score',
       'Processing Time',
+      'Tokens Used',
+      'API Cost (USD)',
       'Model Used',
       'Test Result Summary',
       'ChatGPT Response',
@@ -112,6 +115,8 @@ const TestRuns: React.FC = () => {
           : JSON.stringify(run.jsonData?.content || {}),
         run.result?.confidence?.toString() || 'N/A',
         formatTime(run.result?.processingTime || 0),
+        run.tokensUsed?.toString() || 'N/A',
+        run.costUsd?.toFixed(6) || 'N/A',
         run.result?.model || 'N/A',
         run.result?.summary || 'No summary',
         run.result?.chatGPTResponse || 'No response',
@@ -171,6 +176,37 @@ const TestRuns: React.FC = () => {
           </button>
         </div>
         
+        {/* Summary Statistics */}
+        {filteredRuns.length > 0 && (
+          <div className="summary-stats grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white p-4 rounded-lg border border-gray-200">
+              <div className="text-sm text-gray-500">Total Tests</div>
+              <div className="text-2xl font-bold text-gray-900">{filteredRuns.length}</div>
+            </div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200">
+              <div className="text-sm text-gray-500">Total Tokens Used</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {filteredRuns.reduce((sum, run) => sum + (run.tokensUsed || 0), 0).toLocaleString()}
+              </div>
+            </div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200">
+              <div className="text-sm text-gray-500">Total API Cost</div>
+              <div className="text-2xl font-bold text-green-600">
+                ${filteredRuns.reduce((sum, run) => sum + (run.costUsd || 0), 0).toFixed(4)}
+              </div>
+            </div>
+            <div className="bg-white p-4 rounded-lg border border-gray-200">
+              <div className="text-sm text-gray-500">Avg Cost per Test</div>
+              <div className="text-2xl font-bold text-purple-600">
+                ${filteredRuns.length > 0 
+                  ? (filteredRuns.reduce((sum, run) => sum + (run.costUsd || 0), 0) / filteredRuns.length).toFixed(6)
+                  : '0'
+                }
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="filters">
           <label htmlFor="prompt-filter" className="block text-sm font-medium text-gray-700 mb-1">Filter by Prompt:</label>
           <select 
@@ -221,6 +257,16 @@ const TestRuns: React.FC = () => {
                       <span className="processing-time">
                         {formatTime(run.result.processingTime)}
                       </span>
+                      {run.tokensUsed && (
+                        <span className="tokens inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800" title="Tokens Used">
+                          🪙 {run.tokensUsed.toLocaleString()}
+                        </span>
+                      )}
+                      {run.costUsd && (
+                        <span className="cost inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800" title="API Cost">
+                          💰 ${run.costUsd.toFixed(6)}
+                        </span>
+                      )}
                       {run.result.model && (
                         <span className="model">{run.result.model}</span>
                       )}

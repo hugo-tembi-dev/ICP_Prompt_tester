@@ -1,9 +1,11 @@
 export interface Question {
   id: string;
   text: string;
-  type: 'text' | 'textarea' | 'select' | 'multiselect';
+  type: 'text' | 'select' | 'multiselect';
   required: boolean;
+  hardFilter: boolean;
   options?: string[];
+  tags: string[];
   createdAt: string;
 }
 
@@ -13,6 +15,7 @@ export interface Prompt {
   questions: Question[];
   answers: { [questionId: string]: string | string[] };
   generatedPrompt: string;
+  tags: string[];
   createdAt: string;
 }
 
@@ -28,8 +31,12 @@ export interface TestResult {
     processingTime: number;
     chatGPTResponse?: string;
     model?: string;
+    tokensUsed?: number;
+    costUsd?: number;
   };
   timestamp: string;
+  tokensUsed?: number;
+  costUsd?: number;
 }
 
 export interface UploadedFile {

@@ -35,7 +35,9 @@ class Database {
           text TEXT NOT NULL,
           type TEXT NOT NULL DEFAULT 'text',
           required INTEGER DEFAULT 0,
+          hardFilter INTEGER DEFAULT 0,
           options TEXT, -- JSON array for select/multiselect options
+          tags TEXT DEFAULT '[]', -- JSON array of tags
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -48,6 +50,7 @@ class Database {
           questions TEXT NOT NULL, -- JSON array
           answers TEXT NOT NULL, -- JSON object
           generated_prompt TEXT NOT NULL,
+          tags TEXT DEFAULT '[]', -- JSON array of tags
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (base_prompt_id) REFERENCES prompts(id)
         );
@@ -104,7 +107,34 @@ class Database {
           reject(err);
         } else {
           console.log('Database tables initialized successfully');
-          resolve();
+          
+          // Add tags column to existing prompts table if it doesn't exist
+          this.db.run('ALTER TABLE prompts ADD COLUMN tags TEXT DEFAULT \'[]\'', (alterErr) => {
+            if (alterErr && !alterErr.message.includes('duplicate column name')) {
+              console.log('Tags column already exists or failed to add:', alterErr.message);
+            } else {
+              console.log('Tags column check completed');
+            }
+            
+            // Add tags column to existing questions table if it doesn't exist
+            this.db.run('ALTER TABLE questions ADD COLUMN tags TEXT DEFAULT \'[]\'', (questionAlterErr) => {
+              if (questionAlterErr && !questionAlterErr.message.includes('duplicate column name')) {
+                console.log('Questions tags column already exists or failed to add:', questionAlterErr.message);
+              } else {
+                console.log('Questions tags column check completed');
+              }
+              
+              // Add hardFilter column to existing questions table if it doesn't exist
+              this.db.run('ALTER TABLE questions ADD COLUMN hardFilter INTEGER DEFAULT 0', (hardFilterAlterErr) => {
+                if (hardFilterAlterErr && !hardFilterAlterErr.message.includes('duplicate column name')) {
+                  console.log('Questions hardFilter column already exists or failed to add:', hardFilterAlterErr.message);
+                } else {
+                  console.log('Questions hardFilter column check completed');
+                }
+                resolve();
+              });
+            });
+          });
         }
       });
     });
@@ -115,23 +145,53 @@ class Database {
     return new Promise((resolve, reject) => {
       this.db.all('SELECT * FROM questions ORDER BY created_at DESC', (err, rows) => {
         if (err) reject(err);
-        else resolve(rows.map(row => ({
-          ...row,
-          options: row.options ? JSON.parse(row.options) : []
-        })));
+        else resolve(rows.map(row => {
+          try {
+            return {
+              ...row,
+              options: row.options ? JSON.parse(row.options) : [],
+              tags: JSON.parse(row.tags || '[]'),
+              hardFilter: Boolean(row.hardFilter)
+            };
+          } catch (parseError) {
+            console.error('Error parsing question data:', row.id, parseError);
+            return {
+              ...row,
+              options: row.options ? JSON.parse(row.options) : [],
+              tags: [],
+              hardFilter: false
+            };
+          }
+        }));
       });
     });
   }
 
   async createQuestion(question) {
     return new Promise((resolve, reject) => {
-      const { id, text, type, required, options } = question;
+      const { id, text, type, required, hardFilter, options, tags = [] } = question;
       this.db.run(
-        'INSERT INTO questions (id, text, type, required, options) VALUES (?, ?, ?, ?, ?)',
-        [id, text, type, required ? 1 : 0, options ? JSON.stringify(options) : null],
+        'INSERT INTO questions (id, text, type, required, hardFilter, options, tags) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [
+          id,
+          text,
+          type || 'text',
+          required || 0,
+          hardFilter || 0,
+          JSON.stringify(options || []),
+          JSON.stringify(tags)
+        ],
         function(err) {
           if (err) reject(err);
-          else resolve({ id, ...question });
+          else resolve({ 
+            id, 
+            text, 
+            type: type || 'text',
+            required: required || 0,
+            hardFilter: hardFilter || 0,
+            options: options || [],
+            tags
+          });
         }
       );
     });
@@ -146,9 +206,12 @@ class Database {
         if (key === 'options') {
           fields.push(`${key} = ?`);
           values.push(updates[key] ? JSON.stringify(updates[key]) : null);
-        } else if (key === 'required') {
+        } else if (key === 'required' || key === 'hardFilter') {
           fields.push(`${key} = ?`);
           values.push(updates[key] ? 1 : 0);
+        } else if (key === 'tags') {
+          fields.push(`${key} = ?`);
+          values.push(updates[key] ? JSON.stringify(updates[key]) : JSON.stringify([]));
         } else {
           fields.push(`${key} = ?`);
           values.push(updates[key]);
@@ -194,6 +257,8 @@ class Database {
           ...row,
           questions: JSON.parse(row.questions),
           answers: JSON.parse(row.answers),
+          generatedPrompt: row.generated_prompt, // Map generated_prompt to generatedPrompt
+          tags: JSON.parse(row.tags || '[]'), // Parse tags from JSON
           test_count: row.test_count || 0
         })));
       });
@@ -202,7 +267,7 @@ class Database {
 
   async createPrompt(prompt) {
     return new Promise((resolve, reject) => {
-      const { id, name, questions, answers, generatedPrompt } = prompt;
+      const { id, name, questions, answers, generatedPrompt, tags = [] } = prompt;
       
       // Check if this is a version of an existing prompt
       this.db.get(
@@ -218,7 +283,7 @@ class Database {
           const version = existingPrompt ? existingPrompt.version + 1 : 1;
 
           this.db.run(
-            'INSERT INTO prompts (id, name, base_prompt_id, version, questions, answers, generated_prompt) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO prompts (id, name, base_prompt_id, version, questions, answers, generated_prompt, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
             [
               id,
               name,
@@ -226,7 +291,8 @@ class Database {
               version,
               JSON.stringify(questions),
               JSON.stringify(answers),
-              generatedPrompt
+              generatedPrompt,
+              JSON.stringify(tags)
             ],
             function(err) {
               if (err) reject(err);
@@ -236,6 +302,7 @@ class Database {
                 questions, 
                 answers, 
                 generatedPrompt,
+                tags,
                 version,
                 basePromptId
               });
@@ -254,7 +321,9 @@ class Database {
           resolve({
             ...row,
             questions: JSON.parse(row.questions),
-            answers: JSON.parse(row.answers)
+            answers: JSON.parse(row.answers),
+            generatedPrompt: row.generated_prompt, // Map generated_prompt to generatedPrompt
+            tags: JSON.parse(row.tags || '[]') // Parse tags from JSON
           });
         } else {
           resolve(null);
@@ -300,8 +369,12 @@ class Database {
             confidence: row.confidence,
             processingTime: row.processing_time,
             chatGPTResponse: row.chatgpt_response,
-            model: row.model
-          }
+            model: row.model,
+            tokensUsed: row.tokens_used,
+            costUsd: row.cost_usd
+          },
+          tokensUsed: row.tokens_used,
+          costUsd: row.cost_usd
         })));
       });
     });
@@ -316,6 +389,8 @@ class Database {
         promptVersion = 1,
         jsonData,
         result,
+        tokensUsed = 0,
+        costUsd = 0,
         timestamp
       } = testResult;
 
@@ -323,8 +398,8 @@ class Database {
         `INSERT INTO test_results (
           id, prompt_id, prompt_name, prompt_version, json_data, json_type,
           result_summary, result_insights, confidence, processing_time,
-          chatgpt_response, model, timestamp
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          chatgpt_response, model, tokens_used, cost_usd, timestamp
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           id,
           promptId,
@@ -338,6 +413,8 @@ class Database {
           result.processingTime,
           result.chatGPTResponse,
           result.model,
+          tokensUsed,
+          costUsd,
           timestamp || new Date().toISOString()
         ],
         function(err) {

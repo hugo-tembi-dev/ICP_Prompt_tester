@@ -93,7 +93,9 @@ app.post('/api/questions', async (req, res) => {
       text: req.body.text,
       type: req.body.type || 'text',
       required: req.body.required || false,
-      options: req.body.options
+      hardFilter: req.body.hardFilter || false,
+      options: req.body.options,
+      tags: req.body.tags || []
     };
     
     const createdQuestion = await database.createQuestion(question);
@@ -142,7 +144,8 @@ app.post('/api/prompts', async (req, res) => {
       name: req.body.name,
       questions: req.body.questions,
       answers: req.body.answers,
-      generatedPrompt: req.body.generatedPrompt
+      generatedPrompt: req.body.generatedPrompt,
+      tags: req.body.tags || []
     };
     
     const createdPrompt = await database.createPrompt(prompt);
@@ -291,6 +294,14 @@ Please provide a comprehensive analysis following the instructions in the prompt
     const processingTime = Date.now() - startTime;
     const chatGPTResponse = completion.choices[0].message.content;
 
+    // Debug logging for usage data
+    console.log('OpenAI API Response:', {
+      model: completion.model,
+      usage: completion.usage,
+      total_tokens: completion.usage?.total_tokens,
+      calculatedCost: calculateCost(completion.usage?.total_tokens || 0, completion.model)
+    });
+
     // Analyze the response for metrics
     const analysisResult = {
       summary: `Analysis of JSON data using custom prompt: ${prompt.name}`,
@@ -298,8 +309,13 @@ Please provide a comprehensive analysis following the instructions in the prompt
       confidence: calculateConfidence(chatGPTResponse),
       processingTime: processingTime,
       chatGPTResponse: chatGPTResponse,
-      model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo'
+      model: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
+      tokensUsed: completion.usage?.total_tokens || 0,
+      costUsd: calculateCost(completion.usage?.total_tokens || 0, completion.model)
     };
+
+    const tokensUsed = completion.usage?.total_tokens || 0;
+    const costUsd = calculateCost(tokensUsed, completion.model);
 
     const testResult = {
       id: uuidv4(),
@@ -308,8 +324,17 @@ Please provide a comprehensive analysis following the instructions in the prompt
       promptVersion: prompt.version || 1,
       jsonData: jsonData,
       result: analysisResult,
+      tokensUsed: tokensUsed,
+      costUsd: costUsd,
       timestamp: new Date().toISOString()
     };
+
+    console.log('Test Result to save:', {
+      id: testResult.id,
+      promptName: testResult.promptName,
+      tokensUsed: testResult.tokensUsed,
+      costUsd: testResult.costUsd
+    });
 
     await database.createTestResult(testResult);
     res.json(testResult);
@@ -367,23 +392,27 @@ function calculateConfidence(response) {
   // Simple confidence calculation based on response characteristics
   let confidence = 0.5; // Base confidence
   
-  // Increase confidence for longer, detailed responses
+  // Increase confidence based on response length and structure
+  if (response.length > 100) confidence += 0.1;
   if (response.length > 500) confidence += 0.1;
-  if (response.length > 1000) confidence += 0.1;
-  
-  // Increase confidence for structured responses
-  if (response.includes('\n') || response.includes('-') || response.includes('1.')) {
-    confidence += 0.1;
-  }
-  
-  // Increase confidence for analytical keywords
-  const analyticalKeywords = ['analysis', 'insight', 'pattern', 'recommendation', 'conclusion'];
-  const foundKeywords = analyticalKeywords.filter(keyword => 
-    response.toLowerCase().includes(keyword)
-  );
-  confidence += foundKeywords.length * 0.05;
+  if (response.includes('analysis') || response.includes('insight')) confidence += 0.1;
+  if (response.includes('recommendation')) confidence += 0.1;
+  if (response.includes('data') || response.includes('pattern')) confidence += 0.1;
   
   return Math.min(confidence, 0.95); // Cap at 95%
+}
+
+function calculateCost(tokens, model) {
+  // OpenAI pricing (as of 2024)
+  const pricing = {
+    'gpt-3.5-turbo': 0.0005, // $0.0005 per 1K tokens
+    'gpt-4': 0.03, // $0.03 per 1K tokens
+    'gpt-4-turbo': 0.01, // $0.01 per 1K tokens
+    'gpt-4o': 0.005, // $0.005 per 1K tokens
+  };
+  
+  const pricePerToken = (pricing[model] || pricing['gpt-3.5-turbo']) / 1000;
+  return tokens * pricePerToken;
 }
 
 app.get('/api/results', async (req, res) => {

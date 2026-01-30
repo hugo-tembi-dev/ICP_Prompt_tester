@@ -6,7 +6,8 @@ import {
   CheckCircleIcon,
   ArrowRightIcon,
   QuestionMarkCircleIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 import { Question, Prompt } from '../types';
 import { getQuestions, createPrompt } from '../services/api';
@@ -22,7 +23,12 @@ const AnswerCollector: React.FC<AnswerCollectorProps> = ({ onPromptCreated }) =>
   const [currentStep, setCurrentStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const [editablePrompt, setEditablePrompt] = useState('');
   const [excludedQuestions, setExcludedQuestions] = useState<Set<string>>(new Set());
+  const [promptTags, setPromptTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [selectedTag, setSelectedTag] = useState<string>('all');
+  const [selectedBadge, setSelectedBadge] = useState<string>('all');
 
   useEffect(() => {
     loadQuestions();
@@ -53,6 +59,25 @@ const AnswerCollector: React.FC<AnswerCollectorProps> = ({ onPromptCreated }) =>
     });
   };
 
+  const addTag = () => {
+    const trimmedTag = tagInput.trim();
+    if (trimmedTag && !promptTags.includes(trimmedTag)) {
+      setPromptTags(prev => [...prev, trimmedTag]);
+      setTagInput('');
+    }
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setPromptTags(prev => prev.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleTagInputKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTag();
+    }
+  };
+
   const generatePrompt = () => {
     setIsGenerating(true);
     
@@ -74,6 +99,7 @@ const AnswerCollector: React.FC<AnswerCollectorProps> = ({ onPromptCreated }) =>
 
       prompt += `\nInstructions: Analyze JSON data with focus on patterns and recommendations.\n`;
       setGeneratedPrompt(prompt);
+      setEditablePrompt(prompt); // Set the editable version
       setIsGenerating(false);
     }, 1500);
   };
@@ -81,19 +107,49 @@ const AnswerCollector: React.FC<AnswerCollectorProps> = ({ onPromptCreated }) =>
   const createPromptAndSave = async () => {
     try {
       const prompt: Prompt = {
-        id: '',
+        id: Date.now().toString(),
         name: promptName,
-        questions,
-        answers,
-        generatedPrompt,
+        questions: questions.filter(q => !excludedQuestions.has(q.id)),
+        answers: answers,
+        generatedPrompt: editablePrompt,
+        tags: promptTags,
         createdAt: new Date().toISOString()
       };
-      const createdPrompt = await createPrompt(prompt);
-      onPromptCreated?.(createdPrompt);
+
+      const savedPrompt = await createPrompt(prompt);
+      onPromptCreated?.(savedPrompt);
     } catch (error) {
       console.error('Failed to create prompt:', error);
     }
   };
+
+  // Get all unique tags from questions
+  const getAllTags = () => {
+    const allTags = new Set<string>();
+    questions.forEach(question => {
+      if (question.tags && Array.isArray(question.tags)) {
+        question.tags.forEach(tag => allTags.add(tag));
+      }
+    });
+    return Array.from(allTags).sort();
+  };
+
+  // Filter questions based on selected tag and badge
+  const filteredQuestions = questions.filter(question => {
+    // Tag filter
+    if (selectedTag !== 'all') {
+      const hasTag = question.tags && question.tags.includes(selectedTag);
+      if (!hasTag) return false;
+    }
+
+    // Badge filter
+    if (selectedBadge !== 'all') {
+      if (selectedBadge === 'required' && !question.required) return false;
+      if (selectedBadge === 'hardFilter' && !question.hardFilter) return false;
+    }
+
+    return true;
+  });
 
   const nextStep = () => {
     if (currentStep < 4) setCurrentStep(currentStep + 1);
@@ -131,7 +187,44 @@ const AnswerCollector: React.FC<AnswerCollectorProps> = ({ onPromptCreated }) =>
             <div className="space-y-4">
               <h2 className="text-xl font-semibold">Available Questions</h2>
               <p className="text-sm text-gray-600 mb-4">Select which questions to include in your prompt generation. Toggle questions on/off to customize your prompt.</p>
-              {questions.map((question) => (
+              
+              {/* Filters */}
+              <div className="mb-6 space-y-3">
+                {/* Tag Filter */}
+                {getAllTags().length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Tag:</label>
+                    <select 
+                      value={selectedTag}
+                      onChange={(e) => setSelectedTag(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    >
+                      <option value="all">All Tags ({questions.length})</option>
+                      {getAllTags().map(tag => (
+                        <option key={tag} value={tag}>
+                          {tag} ({questions.filter(q => q.tags.includes(tag)).length})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                
+                {/* Badge Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Badge:</label>
+                  <select 
+                    value={selectedBadge}
+                    onChange={(e) => setSelectedBadge(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  >
+                    <option value="all">All Badges ({questions.length})</option>
+                    <option value="required">Required Only ({questions.filter(q => q.required).length})</option>
+                    <option value="hardFilter">Hard Filter Only ({questions.filter(q => q.hardFilter).length})</option>
+                  </select>
+                </div>
+              </div>
+              
+              {filteredQuestions.map((question) => (
                 <div key={question.id} className={`flex items-center space-x-3 p-3 rounded-lg border-2 transition-colors ${
                   excludedQuestions.has(question.id) 
                     ? 'bg-gray-50 border-gray-200 opacity-60' 
@@ -185,6 +278,51 @@ const AnswerCollector: React.FC<AnswerCollectorProps> = ({ onPromptCreated }) =>
                 value={promptName}
                 onChange={(e) => setPromptName(e.target.value)}
               />
+              
+              <div className="space-y-2">
+                <label className="label">Tags (Optional)</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    className="input flex-1"
+                    placeholder="Add a tag and press Enter..."
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyPress={handleTagInputKeyPress}
+                  />
+                  <button
+                    type="button"
+                    onClick={addTag}
+                    className="btn btn-secondary"
+                  >
+                    Add Tag
+                  </button>
+                </div>
+                
+                {promptTags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {promptTags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary-100 text-primary-800"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag(tag)}
+                          className="ml-2 text-primary-600 hover:text-primary-800"
+                        >
+                          <XMarkIcon className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                
+                <p className="text-xs text-gray-500">
+                  💡 Tags help you organize and filter prompts later (e.g., "marketing", "analysis", "customer-segmentation")
+                </p>
+              </div>
             </div>
           )}
 
@@ -281,8 +419,24 @@ const AnswerCollector: React.FC<AnswerCollectorProps> = ({ onPromptCreated }) =>
               {generatedPrompt && (
                 <div className="space-y-4">
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="font-medium mb-2">Generated Prompt Preview:</h3>
-                    <pre className="text-sm text-gray-700 whitespace-pre-wrap">{generatedPrompt}</pre>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-medium">Generated Prompt (Editable):</h3>
+                      <button
+                        onClick={() => setEditablePrompt(generatedPrompt)}
+                        className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                      >
+                        Reset to Original
+                      </button>
+                    </div>
+                    <textarea
+                      className="w-full h-64 px-3 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm font-mono"
+                      value={editablePrompt}
+                      onChange={(e) => setEditablePrompt(e.target.value)}
+                      placeholder="Your generated prompt will appear here..."
+                    />
+                    <div className="mt-2 text-xs text-gray-500">
+                      💡 Tip: You can edit the prompt above to customize it before creating. Changes will be saved when you click "Create Prompt".
+                    </div>
                   </div>
                   
                   <button

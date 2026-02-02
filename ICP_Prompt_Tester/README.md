@@ -1,46 +1,139 @@
-# Getting Started with Create React App
+# ICP Prompt Tester
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A powerful web application for creating, testing, and analyzing AI prompts through Q&A pairs and JSON analysis.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+- **Question Management**: Create and organize custom question libraries
+- **Prompt Generation**: Build prompts from Q&A pairs with various input types
+- **AI Testing**: Test prompts against OpenAI's GPT models
+- **Results Analysis**: Analyze and compare test results
+- **User Authentication**: Secure JWT-based authentication system
+- **Modern UI**: Clean, responsive design with Tailwind CSS
 
-### `npm start`
+## Tech Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### Frontend
+- React 18
+- TypeScript
+- Tailwind CSS
+- Heroicons
+- Axios
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### Backend
+- Node.js
+- Express.js
+- SQLite Database
+- JWT Authentication
+- OpenAI API
+- Multer for file uploads
 
-### `npm test`
+## Deployment
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Vercel Deployment
 
-### `npm run build`
+1. **Install Vercel CLI**
+   ```bash
+   npm i -g vercel
+   ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+2. **Login to Vercel**
+   ```bash
+   vercel login
+   ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+3. **Deploy Frontend**
+   ```bash
+   cd ICP_Prompt_Tester
+   vercel --prod
+   ```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+4. **Set Environment Variables in Vercel Dashboard**
+   - `REACT_APP_API_URL`: Your deployed API URL
+   - `OPENAI_API_KEY`: Your OpenAI API key
+   - `JWT_SECRET`: Your JWT secret key
 
-### `npm run eject`
+### Environment Variables
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+Create a `.env` file based on `.env.example`:
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+cp .env.example .env
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+Required environment variables:
+- `REACT_APP_API_URL`: API endpoint URL
+- `OPENAI_API_KEY`: OpenAI API key for GPT testing
+- `JWT_SECRET`: Secret key for JWT tokens
+- `JWT_EXPIRES_IN`: Token expiration time (default: 7d)
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## Local Development
 
-## Learn More
+1. **Install Dependencies**
+   ```bash
+   npm run install-all
+   ```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+2. **Start Development Servers**
+   ```bash
+   npm run dev
+   ```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+3. **Access Applications**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:5001
+
+## Project Structure
+
+```
+ICP_Prompt_Tester/
+├── src/
+│   ├── components/          # React components
+│   ├── contexts/           # React contexts (Auth)
+│   ├── services/           # API services
+│   └── types/              # TypeScript types
+├── public/                 # Static assets
+├── server/                 # Backend server
+│   ├── database.js         # Database configuration
+│   └── index.js           # Server routes
+├── api/                   # Vercel serverless functions
+└── vercel.json           # Vercel configuration
+```
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `GET /api/auth/verify` - Token verification
+
+### Questions
+- `GET /api/questions` - Get all questions
+- `POST /api/questions` - Create question
+- `PUT /api/questions/:id` - Update question
+- `DELETE /api/questions/:id` - Delete question
+
+### Prompts
+- `GET /api/prompts` - Get all prompts
+- `POST /api/prompts` - Create prompt
+- `POST /api/prompts/:id/test` - Test prompt with AI
+
+### Results
+- `GET /api/results` - Get test results
+- `POST /api/results` - Save test result
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## License
+
+MIT License - see LICENSE file for details
+
+## Support
+
+For issues and questions, please open an issue on GitHub.

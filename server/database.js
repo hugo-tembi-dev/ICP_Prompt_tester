@@ -29,6 +29,17 @@ class Database {
 
       // Create tables
       const createTables = `
+        -- Users table for authentication
+        CREATE TABLE IF NOT EXISTS users (
+          id TEXT PRIMARY KEY,
+          email TEXT UNIQUE NOT NULL,
+          password TEXT NOT NULL,
+          name TEXT NOT NULL,
+          role TEXT DEFAULT 'user',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
         -- Questions table
         CREATE TABLE IF NOT EXISTS questions (
           id TEXT PRIMARY KEY,
@@ -237,6 +248,53 @@ class Database {
         if (err) reject(err);
         else resolve({ success: true });
       });
+    });
+  }
+
+  // Users operations
+  async createUser(user) {
+    return new Promise((resolve, reject) => {
+      const { id, email, password, name, role = 'user' } = user;
+      this.db.run(
+        'INSERT INTO users (id, email, password, name, role) VALUES (?, ?, ?, ?, ?)',
+        [id, email, password, name, role],
+        function(err) {
+          if (err) reject(err);
+          else resolve({
+            id,
+            email,
+            name,
+            role,
+            createdAt: new Date().toISOString()
+          });
+        }
+      );
+    });
+  }
+
+  async getUserByEmail(email) {
+    return new Promise((resolve, reject) => {
+      this.db.get(
+        'SELECT * FROM users WHERE email = ?',
+        [email],
+        (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        }
+      );
+    });
+  }
+
+  async getUserById(id) {
+    return new Promise((resolve, reject) => {
+      this.db.get(
+        'SELECT id, email, name, role, created_at, updated_at FROM users WHERE id = ?',
+        [id],
+        (err, row) => {
+          if (err) reject(err);
+          else resolve(row);
+        }
+      );
     });
   }
 

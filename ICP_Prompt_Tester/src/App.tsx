@@ -5,11 +5,26 @@ import AnswerCollector from './components/AnswerCollector';
 import PromptTester from './components/PromptTester';
 import ResultsDashboard from './components/ResultsDashboard';
 import TestRuns from './components/TestRuns';
+import Login from './components/Login';
 import Layout from './components/Layout';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './index.css';
 
-function App() {
+function AppContent() {
   const [activeTab, setActiveTab] = useState('questions');
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Login />;
+  }
 
   const renderContent = () => {
     switch (activeTab) {
@@ -34,6 +49,14 @@ function App() {
         {renderContent()}
       </Layout>
     </Router>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

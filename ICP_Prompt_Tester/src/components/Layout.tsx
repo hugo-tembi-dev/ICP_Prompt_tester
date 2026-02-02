@@ -150,7 +150,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
             </nav>
 
             {/* User Section */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
+            <div className="px-4 pb-4 border-b border-gray-200">
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -189,7 +189,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
+                      className="absolute top-full left-0 right-0 mt-2 mx-4 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
                     >
                       <div className="py-1">
                         <button

@@ -23,6 +23,9 @@
       "dest": "/index.html"
     }
   ],
+  "installCommand": "npm install && cd ICP_Prompt_Tester && npm install",
+  "buildCommand": "cd ICP_Prompt_Tester && npm run build",
+  "outputDirectory": "ICP_Prompt_Tester/build",
   "env": {
     "REACT_APP_API_URL": "@api_url"
   }

@@ -359,4 +359,7 @@ function calculateCost(tokens, model) {
 // Initialize server
 initializeServer();
 
-module.exports = app;
+// Export for Vercel serverless
+module.exports = (req, res) => {
+  app(req, res);
+};

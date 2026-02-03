@@ -6,6 +6,10 @@
       "use": "@vercel/node"
     },
     {
+      "src": "ICP_Prompt_Tester/api/simple-server.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "ICP_Prompt_Tester/api/server.js",
       "use": "@vercel/node"
     },
@@ -21,6 +25,10 @@
     {
       "src": "/api/test",
       "dest": "/ICP_Prompt_Tester/api/test.js"
+    },
+    {
+      "src": "/api/health",
+      "dest": "/ICP_Prompt_Tester/api/simple-server.js"
     },
     {
       "src": "/api/(.*)",

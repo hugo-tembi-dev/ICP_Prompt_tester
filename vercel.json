@@ -63,7 +63,7 @@
       "dest": "ICP_Prompt_Tester/build/index.html"
     }
   ],
-  "installCommand": "npm install && cd ICP_Prompt_Tester && npm install",
+  "installCommand": "npm install && cd ICP_Prompt_Tester && npm install && cd ICP_Prompt_Tester/api && npm install",
   "buildCommand": "cd ICP_Prompt_Tester && npm run build",
   "outputDirectory": "ICP_Prompt_Tester/build"
 }

@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd server && npm run dev",
-    "client": "cd client && npm start",
-    "build": "cd client && npm run build",
-    "install-all": "npm install && cd server && npm install && cd ../client && npm install"
+    "client": "cd ICP_Prompt_Tester && npm start",
+    "build": "cd ICP_Prompt_Tester && npm run build",
+    "install-all": "npm install && cd server && npm install && cd ../ICP_Prompt_Tester && npm install"
   },
   "keywords": ["prompt", "testing", "json", "analysis", "qa"],
   "author": "",

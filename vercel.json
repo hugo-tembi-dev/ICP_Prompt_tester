@@ -6,11 +6,11 @@
       "use": "@vercel/node"
     },
     {
-      "src": "ICP_Prompt_Tester/api/simple-server.js",
+      "src": "ICP_Prompt_Tester/api/minimal.js",
       "use": "@vercel/node"
     },
     {
-      "src": "ICP_Prompt_Tester/api/server.js",
+      "src": "ICP_Prompt_Tester/api/health.js",
       "use": "@vercel/node"
     },
     {
@@ -27,19 +27,19 @@
       "dest": "/ICP_Prompt_Tester/api/test.js"
     },
     {
-      "src": "/api/health",
-      "dest": "/ICP_Prompt_Tester/api/simple-server.js"
+      "src": "/api/minimal",
+      "dest": "/ICP_Prompt_Tester/api/minimal.js"
     },
     {
-      "src": "/api/(.*)",
-      "dest": "/ICP_Prompt_Tester/api/server.js"
+      "src": "/api/health",
+      "dest": "/ICP_Prompt_Tester/api/health.js"
     },
     {
       "src": "/(.*)",
       "dest": "/ICP_Prompt_Tester/build/index.html"
     }
   ],
-  "installCommand": "npm install && cd ICP_Prompt_Tester && npm install && cd ICP_Prompt_Tester/api && npm install",
+  "installCommand": "npm install && cd ICP_Prompt_Tester && npm install",
   "buildCommand": "cd ICP_Prompt_Tester && npm run build",
   "outputDirectory": "ICP_Prompt_Tester/build"
 }

@@ -5,14 +5,9 @@ import {
   BeakerIcon, 
   ChartBarIcon, 
   ClockIcon,
-  Bars3Icon,
-  SparklesIcon,
-  ArrowRightOnRectangleIcon,
-  UserCircleIcon,
-  Cog6ToothIcon
+  Bars3Icon
 } from '@heroicons/react/24/outline';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../contexts/AuthContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -55,8 +50,6 @@ const navigation = [
 
 const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const { user, logout } = useAuth();
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -92,7 +85,9 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
             <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
               <div className="flex items-center space-x-3">
                 <div className="p-1.5 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl">
-                  <SparklesIcon className="h-4 w-4 text-white" />
+                  <div className="h-4 w-4 text-white flex items-center justify-center">
+                    <span className="text-xs font-bold">ICP</span>
+                  </div>
                 </div>
                 <div>
                   <h1 className="text-lg font-semibold text-gray-900">ICP Prompt Tester</h1>
@@ -147,89 +142,6 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
                 })}
               </div>
             </nav>
-
-            {/* User Section */}
-            <div className="px-4 pb-4 border-b border-gray-200">
-              <div className="relative">
-                <button
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="w-full flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-medium text-primary-600">
-                      {user?.name?.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0 text-left">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {user?.name}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {user?.email}
-                    </p>
-                  </div>
-                  <div className="w-4 h-4 text-gray-400">
-                    <svg 
-                      className={`transform transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`}
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </button>
-
-                {/* User Dropdown Menu */}
-                <AnimatePresence>
-                  {userMenuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute top-full left-0 right-0 mt-2 mx-4 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
-                    >
-                      <div className="py-1">
-                        <button
-                          onClick={() => {
-                            setUserMenuOpen(false);
-                            // TODO: Add profile functionality
-                            console.log('Profile clicked');
-                          }}
-                          className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                        >
-                          <UserCircleIcon className="h-4 w-4" />
-                          <span>Profile</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            setUserMenuOpen(false);
-                            // TODO: Add settings functionality
-                            console.log('Settings clicked');
-                          }}
-                          className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                        >
-                          <Cog6ToothIcon className="h-4 w-4" />
-                          <span>Settings</span>
-                        </button>
-                        <div className="border-t border-gray-100"></div>
-                        <button
-                          onClick={() => {
-                            setUserMenuOpen(false);
-                            logout();
-                          }}
-                          className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          <ArrowRightOnRectangleIcon className="h-4 w-4" />
-                          <span>Logout</span>
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>

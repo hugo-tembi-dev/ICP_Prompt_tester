@@ -6,11 +6,23 @@
       "use": "@vercel/node"
     },
     {
-      "src": "ICP_Prompt_Tester/api/minimal.js",
+      "src": "ICP_Prompt_Tester/api/health.js",
       "use": "@vercel/node"
     },
     {
-      "src": "ICP_Prompt_Tester/api/health.js",
+      "src": "ICP_Prompt_Tester/api/questions.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "ICP_Prompt_Tester/api/prompts.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "ICP_Prompt_Tester/api/prompts/test.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "ICP_Prompt_Tester/api/results.js",
       "use": "@vercel/node"
     },
     {
@@ -24,19 +36,31 @@
   "routes": [
     {
       "src": "/api/test",
-      "dest": "/ICP_Prompt_Tester/api/test.js"
-    },
-    {
-      "src": "/api/minimal",
-      "dest": "/ICP_Prompt_Tester/api/minimal.js"
+      "dest": "ICP_Prompt_Tester/api/test.js"
     },
     {
       "src": "/api/health",
-      "dest": "/ICP_Prompt_Tester/api/health.js"
+      "dest": "ICP_Prompt_Tester/api/health.js"
+    },
+    {
+      "src": "/api/questions",
+      "dest": "ICP_Prompt_Tester/api/questions.js"
+    },
+    {
+      "src": "/api/prompts",
+      "dest": "ICP_Prompt_Tester/api/prompts.js"
+    },
+    {
+      "src": "/api/prompts/test",
+      "dest": "ICP_Prompt_Tester/api/prompts/test.js"
+    },
+    {
+      "src": "/api/results",
+      "dest": "ICP_Prompt_Tester/api/results.js"
     },
     {
       "src": "/(.*)",
-      "dest": "/ICP_Prompt_Tester/build/index.html"
+      "dest": "ICP_Prompt_Tester/build/index.html"
     }
   ],
   "installCommand": "npm install && cd ICP_Prompt_Tester && npm install",

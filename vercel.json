@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "ICP_Prompt_Tester/api/index.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "ICP_Prompt_Tester/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/ICP_Prompt_Tester/api/index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/ICP_Prompt_Tester/build/index.html"
+    }
+  ],
+  "installCommand": "npm install && cd ICP_Prompt_Tester && npm install",
+  "buildCommand": "cd ICP_Prompt_Tester && npm run build",
+  "outputDirectory": "ICP_Prompt_Tester/build",
+  "env": {
+    "REACT_APP_API_URL": "@api_url"
+  }
+}

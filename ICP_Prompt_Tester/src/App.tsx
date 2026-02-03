@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router } from 'react-router-dom';
 import QuestionEditor from './components/QuestionEditor';
 import AnswerCollector from './components/AnswerCollector';
 import PromptTester from './components/PromptTester';

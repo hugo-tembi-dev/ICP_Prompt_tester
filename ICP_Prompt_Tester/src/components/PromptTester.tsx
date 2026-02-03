@@ -6,11 +6,10 @@ import {
   PlayIcon,
   TrashIcon,
   CheckCircleIcon,
-  ExclamationTriangleIcon,
   SparklesIcon,
   DocumentTextIcon
 } from '@heroicons/react/24/outline';
-import { Prompt, TestResult, UploadedFile, Question } from '../types';
+import { Prompt, TestResult, UploadedFile } from '../types';
 import { getPrompts, uploadJsonFile, testPrompt, deletePrompt } from '../services/api';
 
 interface PromptTesterProps {
@@ -154,18 +153,6 @@ const PromptTester: React.FC<PromptTesterProps> = ({ onTestCompleted }) => {
 
     return true;
   });
-
-  const formatDataForDisplay = (data: any) => {
-    if (typeof data === 'string') {
-      try {
-        const parsed = JSON.parse(data);
-        return JSON.stringify(parsed, null, 2);
-      } catch {
-        return data;
-      }
-    }
-    return JSON.stringify(data, null, 2);
-  };
 
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 0.8) return 'text-success-600';

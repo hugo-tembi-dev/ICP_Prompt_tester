@@ -5,7 +5,6 @@ import {
   DocumentTextIcon,
   CheckCircleIcon,
   ArrowRightIcon,
-  QuestionMarkCircleIcon,
   ChevronDownIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';

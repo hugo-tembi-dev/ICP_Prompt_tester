@@ -97,15 +97,6 @@ const TestRuns: React.FC = () => {
     ];
 
     const csvRows = filteredRuns.map(run => {
-      const answersText = Object.entries(run.prompt.answers || {})
-        .map(([questionId, answer]) => {
-          const question = run.prompt.questions.find(q => q.id === questionId);
-          const questionText = question?.text || questionId;
-          const answerText = Array.isArray(answer) ? answer.join(', ') : answer;
-          return `${questionText}: ${answerText}`;
-        })
-        .join(' | ');
-
       return [
         run.prompt.name || 'Unknown',
         run.prompt.generatedPrompt || 'No prompt details',

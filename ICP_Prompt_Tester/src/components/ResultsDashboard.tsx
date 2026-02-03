@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Prompt, TestResult } from '../types';
-import { getPrompts, getTestResults, getOverallAnalytics, getPromptAnalytics } from '../services/api';
+import { getPrompts, getTestResults, getOverallAnalytics } from '../services/api';
 
 interface PromptMetrics {
   promptId: string;
@@ -36,12 +36,9 @@ const ResultsDashboard: React.FC = () => {
   const [selectedPrompt, setSelectedPrompt] = useState<string>('all');
 
   useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const [promptsData, resultsData, analyticsData] = await Promise.all([
+    const loadData = async () => {
+      try {
+        const [promptsData, resultsData, analyticsData] = await Promise.all([
         getPrompts(),
         getTestResults(),
         getOverallAnalytics()
@@ -70,6 +67,9 @@ const ResultsDashboard: React.FC = () => {
       console.error('Failed to load data:', error);
     }
   };
+
+  loadData();
+  }, []);
 
   const calculateMetrics = (prompts: Prompt[], results: TestResult[]) => {
     const metricsMap = new Map<string, PromptMetrics>();

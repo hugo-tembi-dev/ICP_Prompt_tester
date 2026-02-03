@@ -6,7 +6,6 @@ import {
   ChartBarIcon, 
   ClockIcon,
   Bars3Icon,
-  XMarkIcon,
   SparklesIcon,
   ArrowRightOnRectangleIcon,
   UserCircleIcon,

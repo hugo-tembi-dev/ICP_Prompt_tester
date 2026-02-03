@@ -60,15 +60,15 @@
     },
     {
       "src": "/static/(.*)",
-      "dest": "/ICP_Prompt_Tester/build/static/$1"
+      "dest": "static/$1"
     },
     {
       "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg))",
-      "dest": "/ICP_Prompt_Tester/build/$1"
+      "dest": "$1"
     },
     {
       "src": "/(.*)",
-      "dest": "/ICP_Prompt_Tester/build/index.html"
+      "dest": "index.html"
     }
   ],
   "installCommand": "npm install && cd ICP_Prompt_Tester && npm install && cd ICP_Prompt_Tester/api && npm install",

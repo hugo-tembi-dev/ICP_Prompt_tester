@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "ICP_Prompt_Tester/api/index.js",
+      "src": "ICP_Prompt_Tester/api/server.js",
       "use": "@vercel/node"
     },
     {
@@ -16,7 +16,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/ICP_Prompt_Tester/api/index.js"
+      "dest": "/ICP_Prompt_Tester/api/server.js"
     },
     {
       "src": "/(.*)",
